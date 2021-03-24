@@ -552,7 +552,7 @@ class DVRIPCam(object):
             code = 1044
         else:
             code = 1042
-        return self.get_info(code, "Camera")
+        return self.get_command("Camera", code)
 
     def get_encode_info(self, default_config=False):
         """Request data for 'Simplify.Encode' from the target DVRIP device.
@@ -564,7 +564,7 @@ class DVRIPCam(object):
             code = 1044
         else:
             code = 1042
-        return self.get_info(code, "Simplify.Encode")
+        return self.get_command("Simplify.Encode", code)
 
     def recv_json(self, buf=bytearray()):
         p = compile(b".*({.*})")
