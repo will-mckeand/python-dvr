@@ -129,7 +129,10 @@ class DVRIPCam(object):
         return self.socket.sendall(bytes)
 
     def tcp_socket_recv(self, bufsize):
-        return self.socket.recv(bufsize)
+        try:
+            return self.socket.recv(bufsize)
+        except:
+            return None
 
     def receive_with_timeout(self, length):
         received = 0
@@ -181,6 +184,7 @@ class DVRIPCam(object):
         self.socket_send(pkt)
         if wait_response:
             reply = {"Ret": 101}
+            data = self.socket_recv(20)
             (
                 head,
                 version,
@@ -188,7 +192,7 @@ class DVRIPCam(object):
                 sequence_number,
                 msgid,
                 len_data,
-            ) = struct.unpack("BB2xII2xHI", self.socket_recv(20))
+            ) = struct.unpack("BB2xII2xHI", data)
             reply = self.receive_json(len_data)
             self.busy.release()
             return reply
@@ -629,6 +633,9 @@ class DVRIPCam(object):
 
         while True:
             data, rcvd = self.recv_json(rcvd)
+            if data is None:
+                vprint("Done")
+                return
             if data["Ret"] in [512, 513]:
                 vprint("Upgrade failed")
                 return data
