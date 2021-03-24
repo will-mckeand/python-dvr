@@ -638,7 +638,7 @@ class DVRIPCam(object):
             if data is None:
                 vprint("Done")
                 return
-            if data["Ret"] in [512, 513]:
+            if data["Ret"] in [512, 514, 513]:
                 vprint("Upgrade failed")
                 return data
             if data["Ret"] == 515:
