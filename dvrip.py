@@ -185,6 +185,8 @@ class DVRIPCam(object):
         if wait_response:
             reply = {"Ret": 101}
             data = self.socket_recv(20)
+            if len(data) == 0:
+                return None
             (
                 head,
                 version,
@@ -214,7 +216,7 @@ class DVRIPCam(object):
                 "UserName": self.user,
             },
         )
-        if data["Ret"] not in self.OK_CODES:
+        if data is None or data["Ret"] not in self.OK_CODES:
             return False
         self.session = int(data["SessionID"], 16)
         self.alive_time = data["AliveInterval"]
