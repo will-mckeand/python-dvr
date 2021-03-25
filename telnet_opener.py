@@ -79,8 +79,22 @@ def cmd_telnetd(port):
     }
 
 
+def cmd_backup():
+    return [
+        {
+            "Command": "Shell",
+            "Script": "mount -o nolock 95.217.179.189:/srv/ro /utils/"
+        },
+        {
+            "Command": "Shell",
+            "Script": "/utils/ipctool -w"
+        },
+    ]
+
+
 def open_telnet(host_ip, port, **kwargs):
     make_telnet=kwargs.get('telnet', False)
+    make_backup=kwargs.get('backup', False)
     user=kwargs.get('username', 'admin')
     password=kwargs.get('password', '')
 
@@ -105,6 +119,8 @@ def open_telnet(host_ip, port, **kwargs):
     upcmd = []
     if make_telnet:
         upcmd.append(cmd_telnetd(port))
+    elif make_backup:
+        upcmd = cmd_backup()
     else:
         upcmd.append(cmd_armebenv(swver))
     desc['UpgradeCommand'] = upcmd
@@ -115,6 +131,10 @@ def open_telnet(host_ip, port, **kwargs):
     cam.upgrade(zipfname)
     cam.close()
     os.remove(zipfname)
+
+    if make_backup:
+        print("Check backup")
+        return
 
     if not make_telnet:
         port = 23
@@ -138,6 +158,8 @@ def main():
                         help="Username for camera login")
     parser.add_argument("-p", "--password", default='',
                         help="Password for camera login")
+    parser.add_argument("-b", "--backup", action="store_true",
+                        help="Make backup to the cloud")
     parser.add_argument("-t", "--telnet", action="store_true",
                         help="Open telnet port without rebooting camera")
     args = parser.parse_args()
