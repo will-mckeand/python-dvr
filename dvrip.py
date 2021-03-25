@@ -114,6 +114,7 @@ class DVRIPCam(object):
         self.socket.settimeout(timeout)
 
     def close(self):
+        print("Closing")
         try:
             self.alive.cancel()
             self.socket.close()
@@ -191,7 +192,8 @@ class DVRIPCam(object):
         if wait_response:
             reply = {"Ret": 101}
             data = self.socket_recv(20)
-            if len(data) == 0:
+            if data is None:
+                print("NONE")
                 return None
             (
                 head,
@@ -447,10 +449,13 @@ class DVRIPCam(object):
         )
 
     def keep_alive(self):
-        self.send(
+        ret = self.send(
             self.QCODES["KeepAlive"],
             {"Name": "KeepAlive", "SessionID": "0x%08X" % self.session},
         )
+        if ret is None:
+            self.close()
+            return
         self.alive = threading.Timer(self.alive_time, self.keep_alive)
         self.alive.start()
 
@@ -636,7 +641,9 @@ class DVRIPCam(object):
         vprint("Waiting for upgrade...")
         while True:
             reply, rcvd = self.recv_json(rcvd)
-            if reply and reply["Name"] == "" and reply["Ret"] == 100:
+            if not reply:
+                return
+            if reply["Name"] == "" and reply["Ret"] == 100:
                 break
 
         while True:

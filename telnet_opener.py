@@ -13,8 +13,28 @@ TELNET_PORT = 4321
 
 """
     Tested on XM boards:
-    IPG-53H20PL-S       53H20L_S39    00002532
+    IPG-53H20PL-S       53H20L_S39                  00002532
+    IVG-85HF20PYA-S     HI3516EV200_50H20AI_S38     000559A7
 """
+
+
+# Borrowed from InstallDesc
+flashes = {
+    '000559A7': [ "0x00EF4017", "0x00EF4018", "0x00C22017", "0x00C22018",
+                  "0x00C22019", "0x00C84017", "0x00C84018", "0x001C7017",
+                  "0x001C7018", "0x00207017", "0x00207018", "0x000B4017",
+                  "0x000B4018", ]
+}
+
+def add_flashes(desc, swver):
+    supported = flashes.get(swver)
+    if supported is None:
+        return
+
+    fls = []
+    for i in supported:
+        fls.append({"FlashID":	i})
+    desc['SupportFlashType'] = fls
 
 
 def make_zip(filename, data):
@@ -51,20 +71,21 @@ def open_telnet(host_ip, port, **kwargs):
 
     armbenv = {
         "Command": "Shell",
-        "Script": "armbenv -s xmuart 0; armbenv -s telnetctrl 1",
+        "Script": "XmEnv -s xmuart 0; XmEnv -s telnetctrl 1",
     }
     telnetd = {
         "Command": "Shell",
         "Script": f"busybox telnetd -F -p {port} -l /bin/sh",
     }
     desc = {
-        "UpgradeCommand": [armbenv, telnetd],
+        "UpgradeCommand": [armbenv],
         "Hardware": hw,
         "DevID": f"{swver}1001000000000000",
         "CompatibleVersion": 2,
         "Vendor": "General",
         "CRC": "1ce6242100007636",
     }
+    add_flashes(desc, swver)
     zipfname = "upgrade.bin"
     make_zip(zipfname, json.dumps(desc, indent=2))
     cam.upgrade(zipfname)
