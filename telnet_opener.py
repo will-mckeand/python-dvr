@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 
 from dvrip import DVRIPCam
-import zipfile
-import socket
+import argparse
 import json
 import os
+import socket
+import zipfile
 
 TELNET_PORT = 4321
 
@@ -25,7 +26,7 @@ def extract_gen(swver):
     return swver.split(".")[3]
 
 
-def open_telnet(host_ip, port):
+def open_telnet(host_ip, port, do_reboot):
     cam = DVRIPCam(host_ip, user="admin", password="")
     if not cam.login():
         print(f"Cannot connect {host_ip}")
@@ -58,6 +59,15 @@ def open_telnet(host_ip, port):
     cam.upgrade(zipfname)
     cam.close()
     os.remove(zipfname)
+    if do_reboot:
+        os.sleep(10)
+        cam = DVRIPCam(host_ip, user="admin", password="")
+        cam.login()
+        cam.reboot()
+        cam.close()
+        print("Camera has been rebooted")
+        return
+
     if check_port(host_ip, port):
         print(f"Now use 'telnet {host_ip} {port}' to login")
     else:
@@ -65,7 +75,12 @@ def open_telnet(host_ip, port):
 
 
 def main():
-    open_telnet("IPG-53H20PL-S_2", TELNET_PORT)
+    parser = argparse.ArgumentParser()
+    parser.add_argument("hostname", help="Camera IP address or hostname")
+    parser.add_argument("-r", "--reboot", action="store_true",
+                        help="Reboot camera after make changes")
+    args = parser.parse_args()
+    open_telnet(args.hostname, TELNET_PORT, args.reboot)
 
 
 if __name__ == "__main__":
