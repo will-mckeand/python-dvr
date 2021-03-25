@@ -114,7 +114,6 @@ class DVRIPCam(object):
         self.socket.settimeout(timeout)
 
     def close(self):
-        print("Closing")
         try:
             self.alive.cancel()
             self.socket.close()
@@ -193,7 +192,6 @@ class DVRIPCam(object):
             reply = {"Ret": 101}
             data = self.socket_recv(20)
             if data is None:
-                print("NONE")
                 return None
             (
                 head,
@@ -592,7 +590,6 @@ class DVRIPCam(object):
         buf.extend(packet)
         m = p.search(buf)
         if m is None:
-            print(buf)
             return None, buf
         buf = buf[m.span(1)[1] :]
         return json.loads(m.group(1)), buf

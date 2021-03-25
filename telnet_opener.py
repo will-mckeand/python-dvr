@@ -65,7 +65,7 @@ def extract_gen(swver):
 
 
 def open_telnet(host_ip, port, **kwargs):
-    do_reboot=kwargs.get('reboot', False)
+    make_telnet=kwargs.get('telnet', False)
     user=kwargs.get('username', 'admin')
     password=kwargs.get('password', '')
 
@@ -104,15 +104,13 @@ def open_telnet(host_ip, port, **kwargs):
     cam.close()
     os.remove(zipfname)
 
+    if not make_telnet:
+        port = 23
+        print("Waiting for camera is rebooting...")
+        time.sleep(40)
+
     if check_port(host_ip, port):
-        if not do_reboot:
-            print(f"Now use 'telnet {host_ip} {port}' to login")
-        else:
-            tn = Telnet(host_ip, port=port)
-            tn.read_until(b"# ")
-            tn.write(b'reboot\n')
-            tn.read_all().decode('ascii')
-            print("Reboot has been initiated")
+        print(f"Now use 'telnet {host_ip} {port}' to login")
     else:
         print("Something went wrong")
         return
@@ -125,8 +123,8 @@ def main():
                         help="Username for camera login")
     parser.add_argument("-p", "--password", default='',
                         help="Password for camera login")
-    parser.add_argument("-r", "--reboot", action="store_true",
-                        help="Reboot camera after make changes")
+    parser.add_argument("-t", "--telnet", action="store_true",
+                        help="Open telnet port without rebooting camera")
     args = parser.parse_args()
     open_telnet(args.hostname, TELNET_PORT, **vars(args))
 
