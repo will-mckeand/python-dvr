@@ -64,6 +64,21 @@ def extract_gen(swver):
     return swver.split(".")[3]
 
 
+def cmd_armebenv(swver):
+    envtool = get_envtool(swver)
+    return {
+        "Command": "Shell",
+        "Script": f"{envtool} -s xmuart 0; {envtool} -s telnetctrl 1",
+    }
+
+
+def cmd_telnetd(port):
+    return {
+        "Command": "Shell",
+        "Script": f"busybox telnetd -F -p {port} -l /bin/sh",
+    }
+
+
 def open_telnet(host_ip, port, **kwargs):
     make_telnet=kwargs.get('telnet', False)
     user=kwargs.get('username', 'admin')
@@ -80,24 +95,21 @@ def open_telnet(host_ip, port, **kwargs):
     swver = extract_gen(sysinfo["SoftWareVersion"])
     print(f"Firmware generation {swver}")
 
-    envtool = get_envtool(swver)
-    armbenv = {
-        "Command": "Shell",
-        "Script": f"{envtool} -s xmuart 0; {envtool} -s telnetctrl 1",
-    }
-    telnetd = {
-        "Command": "Shell",
-        "Script": f"busybox telnetd -F -p {port} -l /bin/sh",
-    }
     desc = {
-        "UpgradeCommand": [armbenv],
         "Hardware": hw,
         "DevID": f"{swver}1001000000000000",
         "CompatibleVersion": 2,
         "Vendor": "General",
         "CRC": "1ce6242100007636",
     }
+    upcmd = []
+    if make_telnet:
+        upcmd.append(cmd_telnetd(port))
+    else:
+        upcmd.append(cmd_armebenv(swver))
+    desc['UpgradeCommand'] = upcmd
     add_flashes(desc, swver)
+
     zipfname = "upgrade.bin"
     make_zip(zipfname, json.dumps(desc, indent=2))
     cam.upgrade(zipfname)
@@ -111,7 +123,8 @@ def open_telnet(host_ip, port, **kwargs):
     for i in range(10):
         time.sleep(4)
         if check_port(host_ip, port):
-            print(f"Now use 'telnet {host_ip} {port}' to login")
+            tport = f" {port}" if port != 23 else ''
+            print(f"Now use 'telnet {host_ip}{tport}' to login")
             return
 
     print("Something went wrong")
