@@ -107,13 +107,15 @@ def open_telnet(host_ip, port, **kwargs):
     if not make_telnet:
         port = 23
         print("Waiting for camera is rebooting...")
-        time.sleep(40)
 
-    if check_port(host_ip, port):
-        print(f"Now use 'telnet {host_ip} {port}' to login")
-    else:
-        print("Something went wrong")
-        return
+    for i in range(10):
+        time.sleep(4)
+        if check_port(host_ip, port):
+            print(f"Now use 'telnet {host_ip} {port}' to login")
+            return
+
+    print("Something went wrong")
+    return
 
 
 def main():
