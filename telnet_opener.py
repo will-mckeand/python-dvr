@@ -14,27 +14,38 @@ TELNET_PORT = 4321
 """
     Tested on XM boards:
     IPG-53H20PL-S       53H20L_S39                  00002532
+    IPG-80H20PS-S       50H20L                      00022520
     IVG-85HF20PYA-S     HI3516EV200_50H20AI_S38     000559A7
 """
 
 
 # Borrowed from InstallDesc
-flashes = {
-    '000559A7': [ "0x00EF4017", "0x00EF4018", "0x00C22017", "0x00C22018",
+conf = {
+    '000559A7': {
+        'envtool': 'XmEnv',
+        'flashes': [ "0x00EF4017", "0x00EF4018", "0x00C22017", "0x00C22018",
                   "0x00C22019", "0x00C84017", "0x00C84018", "0x001C7017",
                   "0x001C7018", "0x00207017", "0x00207018", "0x000B4017",
                   "0x000B4018", ]
+    }
 }
 
 def add_flashes(desc, swver):
-    supported = flashes.get(swver)
+    supported = conf.get(swver)
     if supported is None:
         return
 
     fls = []
-    for i in supported:
+    for i in supported['flashes']:
         fls.append({"FlashID":	i})
     desc['SupportFlashType'] = fls
+
+def get_envtool(swver):
+    supported = conf.get(swver)
+    if supported is None:
+        return "armbenv"
+
+    return supported['envtool']
 
 
 def make_zip(filename, data):
@@ -69,9 +80,10 @@ def open_telnet(host_ip, port, **kwargs):
     swver = extract_gen(sysinfo["SoftWareVersion"])
     print(f"Firmware generation {swver}")
 
+    envtool = get_envtool(swver)
     armbenv = {
         "Command": "Shell",
-        "Script": "XmEnv -s xmuart 0; XmEnv -s telnetctrl 1",
+        "Script": f"{envtool} -s xmuart 0; {envtool} -s telnetctrl 1",
     }
     telnetd = {
         "Command": "Shell",
