@@ -4,6 +4,9 @@ from dvrip import DVRIPCam
 import zipfile
 import socket
 import json
+import os
+
+TELNET_PORT = 4321
 
 
 def make_zip(filename, data):
@@ -18,37 +21,51 @@ def check_port(host_ip, port):
     return result_of_check == 0
 
 
-def open_telnet(host_ip):
+def extract_gen(swver):
+    return swver.split(".")[3]
+
+
+def open_telnet(host_ip, port):
+    cam = DVRIPCam(host_ip, user="admin", password="")
+    if not cam.login():
+        print(f"Cannot connect {host_ip}")
+        return
+    upinfo = cam.get_upgrade_info()
+    hw = upinfo["Hardware"]
+    print(f"Modifiying camera {hw}")
+    sysinfo = cam.get_system_info()
+    swver = extract_gen(sysinfo["SoftWareVersion"])
+    print(f"Firmware generation {swver}")
+
     armbenv = {
         "Command": "Shell",
         "Script": "armbenv -s xmuart 0; armbenv -s telnetctrl 1",
     }
     telnetd = {
         "Command": "Shell",
-        "Script": "busybox telnetd -F -p 4321 -l /bin/sh",
+        "Script": f"busybox telnetd -F -p {port} -l /bin/sh",
     }
-    desc = {"UpgradeCommand": [armbenv, telnetd], 'Hardware': '53H20L_S39',
-            'DevID': '000025321001000000000000', 'CompatibleVersion': 2,
-            'Vendor': 'General', 'CRC': '1ce6242100007636'
-            }
-    zipfname = "IPC_XiongMai_00000197_HI3520DV200_telnet_ZFTLAB-20210324.bin"
+    desc = {
+        "UpgradeCommand": [armbenv, telnetd],
+        "Hardware": hw,
+        "DevID": f"{swver}1001000000000000",
+        "CompatibleVersion": 2,
+        "Vendor": "General",
+        "CRC": "1ce6242100007636",
+    }
+    zipfname = "upgrade.bin"
     make_zip(zipfname, json.dumps(desc, indent=2))
-    cam = DVRIPCam(host_ip, user="admin", password="")
-    if not cam.login():
-        print(f"Cannot connect {host_ip}")
-        return
-    upinfo = cam.get_upgrade_info()
-    print(f"Modifiying camera {upinfo['Hardware']}")
     cam.upgrade(zipfname)
     cam.close()
-    if check_port(host_ip, 4321):
-        print(f"Now use 'telnet {host_ip} 4321' to login")
+    os.remove(zipfname)
+    if check_port(host_ip, port):
+        print(f"Now use 'telnet {host_ip} {port}' to login")
     else:
         print("Something went wrong")
 
 
 def main():
-    open_telnet("IPG-53H20PL-S_2")
+    open_telnet("IPG-53H20PL-S_2", TELNET_PORT)
 
 
 if __name__ == "__main__":
