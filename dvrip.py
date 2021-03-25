@@ -114,8 +114,11 @@ class DVRIPCam(object):
         self.socket.settimeout(timeout)
 
     def close(self):
-        self.alive.cancel()
-        self.socket.close()
+        try:
+            self.alive.cancel()
+            self.socket.close()
+        except:
+            pass
         self.socket = None
 
     def udp_socket_send(self, bytes):
@@ -126,7 +129,10 @@ class DVRIPCam(object):
         return data
 
     def tcp_socket_send(self, bytes):
-        return self.socket.sendall(bytes)
+        try:
+            return self.socket.sendall(bytes)
+        except:
+            return None
 
     def tcp_socket_recv(self, bufsize):
         try:

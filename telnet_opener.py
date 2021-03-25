@@ -1,13 +1,20 @@
 #!/usr/bin/env python3
 
 from dvrip import DVRIPCam
+from telnetlib import Telnet
 import argparse
 import json
 import os
 import socket
+import time
 import zipfile
 
 TELNET_PORT = 4321
+
+"""
+    Tested on XM boards:
+    IPG-53H20PL-S       53H20L_S39    00002532
+"""
 
 
 def make_zip(filename, data):
@@ -26,8 +33,12 @@ def extract_gen(swver):
     return swver.split(".")[3]
 
 
-def open_telnet(host_ip, port, do_reboot):
-    cam = DVRIPCam(host_ip, user="admin", password="")
+def open_telnet(host_ip, port, **kwargs):
+    do_reboot=kwargs.get('reboot', False)
+    user=kwargs.get('username', 'admin')
+    password=kwargs.get('password', '')
+
+    cam = DVRIPCam(host_ip, user=user, password=password)
     if not cam.login():
         print(f"Cannot connect {host_ip}")
         return
@@ -59,28 +70,32 @@ def open_telnet(host_ip, port, do_reboot):
     cam.upgrade(zipfname)
     cam.close()
     os.remove(zipfname)
-    if do_reboot:
-        os.sleep(10)
-        cam = DVRIPCam(host_ip, user="admin", password="")
-        cam.login()
-        cam.reboot()
-        cam.close()
-        print("Camera has been rebooted")
-        return
 
     if check_port(host_ip, port):
-        print(f"Now use 'telnet {host_ip} {port}' to login")
+        if not do_reboot:
+            print(f"Now use 'telnet {host_ip} {port}' to login")
+        else:
+            tn = Telnet(host_ip, port=port)
+            tn.read_until(b"# ")
+            tn.write(b'reboot\n')
+            tn.read_all().decode('ascii')
+            print("Reboot has been initiated")
     else:
         print("Something went wrong")
+        return
 
 
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("hostname", help="Camera IP address or hostname")
+    parser.add_argument("-u", "--username", default='admin',
+                        help="Username for camera login")
+    parser.add_argument("-p", "--password", default='',
+                        help="Password for camera login")
     parser.add_argument("-r", "--reboot", action="store_true",
                         help="Reboot camera after make changes")
     args = parser.parse_args()
-    open_telnet(args.hostname, TELNET_PORT, args.reboot)
+    open_telnet(args.hostname, TELNET_PORT, **vars(args))
 
 
 if __name__ == "__main__":
