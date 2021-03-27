@@ -96,6 +96,14 @@ class DVRIPCam(object):
         self.alarm_func = None
         self.busy = threading.Condition()
 
+    def debug(self, format=None):
+        self.logger.setLevel(logging.DEBUG)
+        ch = logging.StreamHandler()
+        if format:
+            formatter = logging.Formatter(format)
+            ch.setFormatter(formatter)
+        self.logger.addHandler(ch)
+
     def connect(self, timeout=10):
         if self.proto == "tcp":
             self.socket_send = self.tcp_socket_send

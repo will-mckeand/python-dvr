@@ -20,7 +20,7 @@ There is very little software support or documentation other than through tools 
 
 - [NETIP video/audio payload protocol, Chinese](doc/码流帧格式文档.pdf)
 
-- [Xiongmai DVR API v1.0, Russian](doc/Соглашение о интерфейсе цифрового видеорегистратора XiongmaiV1.0.doc)
+- [Xiongmai DVR API v1.0, Russian](blob/master/doc/%D0%A1%D0%BE%D0%B3%D0%BB%D0%B0%D1%88%D0%B5%D0%BD%D0%B8%D0%B5%20%D0%BE%20%D0%B8%D0%BD%D1%82%D0%B5%D1%80%D1%84%D0%B5%D0%B9%D1%81%D0%B5%20%D1%86%D0%B8%D1%84%D1%80%D0%BE%D0%B2%D0%BE%D0%B3%D0%BE%20%D0%B2%D0%B8%D0%B4%D0%B5%D0%BE%D1%80%D0%B5%D0%B3%D0%B8%D1%81%D1%82%D1%80%D0%B0%D1%82%D0%BE%D1%80%D0%B0%20XiongmaiV1.0.doc?raw=true)
 
 - [Xiongmai DVR API, 2013-01-11, Chinese](doc/雄迈数字视频录像机接口协议_V1.0.0.pdf)
 
@@ -380,6 +380,10 @@ cam.set_info("NetWork.NetCommon.HostName", "IVG-85HG50PYA-S")
 dhcpst = cam.get_info("NetWork.NetDHCP")
 dhcpst[0]['Enable'] = True
 cam.set_info("NetWork.NetDHCP", dhcpst)
+
+# Enable/disable cloud support
+cloudEnabled = False
+cam.set_info("NetWork.Nat", { "NatEnable" : cloudEnabled })
 ```
 
 ## Add user and change password
@@ -529,6 +533,14 @@ print(cam.get_upgrade_info())
 
 # Do upgrade
 cam.upgrade("General_HZXM_IPC_HI3516CV300_50H20L_AE_S38_V4.03.R12.Nat.OnvifS.HIK.20181126_ALL.bin")
+```
+
+## Troubleshooting
+
+```python
+cam.debug()
+# or to enable non-standard format
+cam.debug('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 ```
 
 ## Acknowledgements
