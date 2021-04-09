@@ -3,6 +3,7 @@
 from dvrip import DVRIPCam
 from telnetlib import Telnet
 import argparse
+import datetime
 import json
 import os
 import socket
@@ -21,14 +22,26 @@ TELNET_PORT = 4321
 
 # Borrowed from InstallDesc
 conf = {
-    '000559A7': {
-        'envtool': 'XmEnv',
-        'flashes': [ "0x00EF4017", "0x00EF4018", "0x00C22017", "0x00C22018",
-                  "0x00C22019", "0x00C84017", "0x00C84018", "0x001C7017",
-                  "0x001C7018", "0x00207017", "0x00207018", "0x000B4017",
-                  "0x000B4018", ]
+    "000559A7": {
+        "envtool": "XmEnv",
+        "flashes": [
+            "0x00EF4017",
+            "0x00EF4018",
+            "0x00C22017",
+            "0x00C22018",
+            "0x00C22019",
+            "0x00C84017",
+            "0x00C84018",
+            "0x001C7017",
+            "0x001C7018",
+            "0x00207017",
+            "0x00207018",
+            "0x000B4017",
+            "0x000B4018",
+        ],
     }
 }
+
 
 def add_flashes(desc, swver):
     supported = conf.get(swver)
@@ -36,16 +49,17 @@ def add_flashes(desc, swver):
         return
 
     fls = []
-    for i in supported['flashes']:
-        fls.append({"FlashID":	i})
-    desc['SupportFlashType'] = fls
+    for i in supported["flashes"]:
+        fls.append({"FlashID": i})
+    desc["SupportFlashType"] = fls
+
 
 def get_envtool(swver):
     supported = conf.get(swver)
     if supported is None:
         return "armbenv"
 
-    return supported['envtool']
+    return supported["envtool"]
 
 
 def make_zip(filename, data):
@@ -83,20 +97,27 @@ def cmd_backup():
     return [
         {
             "Command": "Shell",
-            "Script": "mount -o nolock 95.217.179.189:/srv/ro /utils/"
+            "Script": "mount -o nolock 95.217.179.189:/srv/ro /utils/",
         },
-        {
-            "Command": "Shell",
-            "Script": "/utils/ipctool -w"
-        },
+        {"Command": "Shell", "Script": "/utils/ipctool -w"},
     ]
 
 
+def ensure_old_version(buildtime):
+    milestone = datetime.date(2020, 5, 20)
+    dto = datetime.datetime.strptime(buildtime, '%Y-%m-%d %H:%M:%S')
+    if dto.date() > milestone:
+        print(f"Current firmware date {dto.date()}, but it needs to be no more than"
+              f" {milestone}\nPlease downgrade and only then continue.  Aborting...")
+        return False
+    return True
+
+
 def open_telnet(host_ip, port, **kwargs):
-    make_telnet=kwargs.get('telnet', False)
-    make_backup=kwargs.get('backup', False)
-    user=kwargs.get('username', 'admin')
-    password=kwargs.get('password', '')
+    make_telnet = kwargs.get("telnet", False)
+    make_backup = kwargs.get("backup", False)
+    user = kwargs.get("username", "admin")
+    password = kwargs.get("password", "")
 
     cam = DVRIPCam(host_ip, user=user, password=password)
     if not cam.login():
@@ -107,6 +128,10 @@ def open_telnet(host_ip, port, **kwargs):
     print(f"Modifiying camera {hw}")
     sysinfo = cam.get_system_info()
     swver = extract_gen(sysinfo["SoftWareVersion"])
+    if not ensure_old_version(sysinfo["BuildTime"]):
+        cam.close()
+        return
+
     print(f"Firmware generation {swver}")
 
     desc = {
@@ -123,7 +148,7 @@ def open_telnet(host_ip, port, **kwargs):
         upcmd = cmd_backup()
     else:
         upcmd.append(cmd_armebenv(swver))
-    desc['UpgradeCommand'] = upcmd
+    desc["UpgradeCommand"] = upcmd
     add_flashes(desc, swver)
 
     zipfname = "upgrade.bin"
@@ -143,7 +168,7 @@ def open_telnet(host_ip, port, **kwargs):
     for i in range(10):
         time.sleep(4)
         if check_port(host_ip, port):
-            tport = f" {port}" if port != 23 else ''
+            tport = f" {port}" if port != 23 else ""
             print(f"Now use 'telnet {host_ip}{tport}' to login")
             return
 
@@ -154,14 +179,21 @@ def open_telnet(host_ip, port, **kwargs):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("hostname", help="Camera IP address or hostname")
-    parser.add_argument("-u", "--username", default='admin',
-                        help="Username for camera login")
-    parser.add_argument("-p", "--password", default='',
-                        help="Password for camera login")
-    parser.add_argument("-b", "--backup", action="store_true",
-                        help="Make backup to the cloud")
-    parser.add_argument("-t", "--telnet", action="store_true",
-                        help="Open telnet port without rebooting camera")
+    parser.add_argument(
+        "-u", "--username", default="admin", help="Username for camera login"
+    )
+    parser.add_argument(
+        "-p", "--password", default="", help="Password for camera login"
+    )
+    parser.add_argument(
+        "-b", "--backup", action="store_true", help="Make backup to the cloud"
+    )
+    parser.add_argument(
+        "-t",
+        "--telnet",
+        action="store_true",
+        help="Open telnet port without rebooting camera",
+    )
     args = parser.parse_args()
     open_telnet(args.hostname, TELNET_PORT, **vars(args))
 
