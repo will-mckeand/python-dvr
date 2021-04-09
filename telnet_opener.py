@@ -8,58 +8,64 @@ import json
 import os
 import socket
 import time
+import requests
 import zipfile
 
 TELNET_PORT = 4321
+ARCHIVE_URL = "https://github.com/widgetii/xmupdates/raw/main/archive"
 
 """
     Tested on XM boards:
     IPG-53H20PL-S       53H20L_S39                  00002532
     IPG-80H20PS-S       50H20L                      00022520
     IVG-85HF20PYA-S     HI3516EV200_50H20AI_S38     000559A7
+    IVG-85HG50PYA-S     HI3516EV300_85H50AI         000529B2
 """
 
+XM50H20AI = {
+    "envtool": "XmEnv",
+    "flashes": [
+        "0x00EF4017",
+        "0x00EF4018",
+        "0x00C22017",
+        "0x00C22018",
+        "0x00C22019",
+        "0x00C84017",
+        "0x00C84018",
+        "0x001C7017",
+        "0x001C7018",
+        "0x00207017",
+        "0x00207018",
+        "0x000B4017",
+        "0x000B4018",
+    ],
+    "downgrade": "000559A7/General_IPC_HI3516EV200_50H20AI_S38.Nat.dss.OnvifS.HIK_V5.00.R02.20200507_all.bin",
+}
 
 # Borrowed from InstallDesc
 conf = {
-    "000559A7": {
-        "envtool": "XmEnv",
-        "flashes": [
-            "0x00EF4017",
-            "0x00EF4018",
-            "0x00C22017",
-            "0x00C22018",
-            "0x00C22019",
-            "0x00C84017",
-            "0x00C84018",
-            "0x001C7017",
-            "0x001C7018",
-            "0x00207017",
-            "0x00207018",
-            "0x000B4017",
-            "0x000B4018",
-        ],
-    }
+    "000559A7": XM50H20AI,
+    "000529B2": XM50H20AI,
 }
 
 
 def add_flashes(desc, swver):
-    supported = conf.get(swver)
-    if supported is None:
+    board = conf.get(swver)
+    if board is None:
         return
 
     fls = []
-    for i in supported["flashes"]:
+    for i in board["flashes"]:
         fls.append({"FlashID": i})
     desc["SupportFlashType"] = fls
 
 
 def get_envtool(swver):
-    supported = conf.get(swver)
-    if supported is None:
+    board = conf.get(swver)
+    if board is None:
         return "armbenv"
 
-    return supported["envtool"]
+    return board["envtool"]
 
 
 def make_zip(filename, data):
@@ -103,12 +109,30 @@ def cmd_backup():
     ]
 
 
-def ensure_old_version(buildtime):
-    milestone = datetime.date(2020, 5, 20)
-    dto = datetime.datetime.strptime(buildtime, '%Y-%m-%d %H:%M:%S')
+def downgrade_old_version(cam, buildtime, swver):
+    milestone = datetime.date(2020, 5, 7)
+    dto = datetime.datetime.strptime(buildtime, "%Y-%m-%d %H:%M:%S")
     if dto.date() > milestone:
-        print(f"Current firmware date {dto.date()}, but it needs to be no more than"
-              f" {milestone}\nPlease downgrade and only then continue.  Aborting...")
+        print(
+            f"Current firmware date {dto.date()}, but it needs to be no more than"
+            f" {milestone}\nConsider downgrade and only then continue.\n\n"
+        )
+        a = input("Are you sure to overwrite current firmware without backup (y/n)? ")
+        if a == "y":
+            print("DOWNGRADING\n")
+            board = conf.get(swver)
+            if board is None:
+                print("is not supported")
+                return False
+
+            url = f"{ARCHIVE_URL}/{board['downgrade']}"
+            print(f"Downloading {url}")
+            r = requests.get(url, allow_redirects=True)
+            open('upgrade.bin', 'wb').write(r.content)
+            print(f"Upgrading...")
+            cam.upgrade('upgrade.bin')
+            return True
+
         return False
     return True
 
@@ -128,7 +152,7 @@ def open_telnet(host_ip, port, **kwargs):
     print(f"Modifiying camera {hw}")
     sysinfo = cam.get_system_info()
     swver = extract_gen(sysinfo["SoftWareVersion"])
-    if not ensure_old_version(sysinfo["BuildTime"]):
+    if not downgrade_old_version(cam, sysinfo["BuildTime"], swver):
         cam.close()
         return
 
