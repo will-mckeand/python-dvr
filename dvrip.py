@@ -652,6 +652,7 @@ class DVRIPCam(object):
         vprint("Waiting for upgrade...")
         while True:
             reply, rcvd = self.recv_json(rcvd)
+            print(reply)
             if not reply:
                 return
             if reply["Name"] == "" and reply["Ret"] == 100:
@@ -659,6 +660,7 @@ class DVRIPCam(object):
 
         while True:
             data, rcvd = self.recv_json(rcvd)
+            print(reply)
             if data is None:
                 vprint("Done")
                 return

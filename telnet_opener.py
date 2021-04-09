@@ -22,7 +22,10 @@ ARCHIVE_URL = "https://github.com/widgetii/xmupdates/raw/main/archive"
     IVG-85HG50PYA-S     HI3516EV300_85H50AI         000529B2
 """
 
-XM50H20AI = {
+# downgrade archive (mainly Yandex.Disk)
+# https://www.cctvsp.ru/articles/obnovlenie-proshivok-dlya-ip-kamer-ot-xiong-mai
+
+XMV4 = {
     "envtool": "XmEnv",
     "flashes": [
         "0x00EF4017",
@@ -39,13 +42,16 @@ XM50H20AI = {
         "0x000B4017",
         "0x000B4018",
     ],
-    "downgrade": "000559A7/General_IPC_HI3516EV200_50H20AI_S38.Nat.dss.OnvifS.HIK_V5.00.R02.20200507_all.bin",
 }
+
+def down(template, filename):
+    template['downgrade'] = filename
+    return template
 
 # Borrowed from InstallDesc
 conf = {
-    "000559A7": XM50H20AI,
-    "000529B2": XM50H20AI,
+    "000559A7": down(XMV4, "General_IPC_HI3516EV200_50H20AI_S38.Nat.dss.OnvifS.HIK_V5.00.R02.20200507_all.bin"),
+    "000529B2": down(XMV4, "General_IPC_HI3516EV300_85H50AI_Nat_dss_OnvifS_HIK_V5_00_R02_20200507.bin"),
 }
 
 
@@ -125,13 +131,18 @@ def downgrade_old_version(cam, buildtime, swver):
                 print("is not supported")
                 return False
 
-            url = f"{ARCHIVE_URL}/{board['downgrade']}"
+            url = f"{ARCHIVE_URL}/{swver}/{board['downgrade']}"
             print(f"Downloading {url}")
             r = requests.get(url, allow_redirects=True)
+            if r.status_code != requests.codes.ok:
+                print("Something went wrong")
+                return False
+
             open('upgrade.bin', 'wb').write(r.content)
             print(f"Upgrading...")
             cam.upgrade('upgrade.bin')
-            return True
+            print("Completed. Wait a minute and then rerun")
+            return False
 
         return False
     return True
