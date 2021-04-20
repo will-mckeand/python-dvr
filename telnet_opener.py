@@ -20,6 +20,9 @@ ARCHIVE_URL = "https://github.com/widgetii/xmupdates/raw/main/archive"
     IPG-80H20PS-S       50H20L                      00022520
     IVG-85HF20PYA-S     HI3516EV200_50H20AI_S38     000559A7
     IVG-85HG50PYA-S     HI3516EV300_85H50AI         000529B2
+
+Issues with: "armbenv: can't load library 'libdvr.so'"
+    IPG-50HV20PES-S     50H20L_18EV200_S38          00018520
 """
 
 # downgrade archive (mainly Yandex.Disk)
