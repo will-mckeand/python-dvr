@@ -55,6 +55,7 @@ def down(template, filename):
 conf = {
     "000559A7": down(XMV4, "General_IPC_HI3516EV200_50H20AI_S38.Nat.dss.OnvifS.HIK_V5.00.R02.20200507_all.bin"),
     "000529B2": down(XMV4, "General_IPC_HI3516EV300_85H50AI_Nat_dss_OnvifS_HIK_V5_00_R02_20200507.bin"),
+    "000529E9": down(XMV4, "hacked_from_HI3516EV300_85H50AI.bin"),
 }
 
 
@@ -128,12 +129,12 @@ def downgrade_old_version(cam, buildtime, swver):
         )
         a = input("Are you sure to overwrite current firmware without backup (y/n)? ")
         if a == "y":
-            print("DOWNGRADING\n")
             board = conf.get(swver)
             if board is None:
-                print("is not supported")
+                print(f"{swver} firmware is not supported yet")
                 return False
 
+            print("DOWNGRADING\n")
             url = f"{ARCHIVE_URL}/{swver}/{board['downgrade']}"
             print(f"Downloading {url}")
             r = requests.get(url, allow_redirects=True)
