@@ -164,9 +164,9 @@ def open_telnet(host_ip, port, **kwargs):
         return
     upinfo = cam.get_upgrade_info()
     hw = upinfo["Hardware"]
-    print(f"Modifiying camera {hw}")
     sysinfo = cam.get_system_info()
     swver = extract_gen(sysinfo["SoftWareVersion"])
+    print(f"Modifying camera {hw}, firmware {swver}")
     if not downgrade_old_version(cam, sysinfo["BuildTime"], swver):
         cam.close()
         return
