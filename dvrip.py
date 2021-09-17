@@ -204,7 +204,7 @@ class DVRIPCam(object):
         if wait_response:
             reply = {"Ret": 101}
             data = self.socket_recv(20)
-            if data is None:
+            if data is None or len(data) < 20:
                 return None
             (
                 head,
