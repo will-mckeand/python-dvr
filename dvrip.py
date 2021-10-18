@@ -86,7 +86,7 @@ class DVRIPCam(object):
         self.ip = ip
         self.user = kwargs.get("user", "admin")
         hash_pass = kwargs.get("hash_pass")
-        self.hash_pass = hash_pass or self.sofia_hash(kwargs.get("password", ""))
+        self.hash_pass = kwargs.get("hash_pass", self.sofia_hash(kwargs.get("password", "")))
         self.proto = kwargs.get("proto", "tcp")
         self.port = kwargs.get("port", self.PORTS.get(self.proto))
         self.socket = None
