@@ -9,7 +9,7 @@ host_ip = "192.168.0.100"
 if len(sys.argv) > 1:
     host_ip = str(sys.argv[1])
 
-cam = DVRIPCam(host_ip, "admin", "46216")
+cam = DVRIPCam(host_ip, user="admin", password="46216")
 
 if cam.login():
     print("Success! Connected to " + host_ip)
