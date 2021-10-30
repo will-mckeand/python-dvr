@@ -66,6 +66,80 @@ cam.set_time()
 cam.close()
 ```
 
+## AsyncIO usage
+```python
+from asyncio_dvrip import DVRIPCam
+import asyncio
+import traceback
+
+def stop(loop):
+  tasks = asyncio.gather(*asyncio.Task.all_tasks(loop=loop), loop=loop, return_exceptions=True)
+  tasks.add_done_callback(lambda t: loop.stop())
+  tasks.cancel()
+
+loop = asyncio.get_event_loop()
+
+def onAlert(event, sequence_number):
+  print(event, sequence_number)
+
+async def some_test_worker():
+  while True:
+    print("do some important work...")
+
+    await asyncio.sleep(3)
+
+async def main(loop):
+  host_ip = '192.168.1.10'
+  cam = DVRIPCam(host_ip, user='admin', password='')
+  try:
+    if not await cam.login():
+      raise Exception("Failure. Could not connect.")
+
+    # -------------------------------
+
+    # take snapshot
+    image = await cam.snapshot()
+    # save it
+    with open("snap.jpeg", "wb") as fp:
+      fp.write(image)
+
+    # -------------------------------
+
+    # write video
+    with open("datastream.h265", "wb") as f:
+      await cam.start_monitor(lambda frame, meta, user: f.write(frame))
+
+    # -------------------------------
+
+    # or get alarms
+    cam.setAlarm(onAlert)
+    # will create new task
+    await cam.alarmStart(loop)
+
+    # so just wait or something else
+    while True:
+      await asyncio.sleep(1)
+
+    # -------------------------------
+
+  except:
+    pass
+  finally:
+    cam.close()
+
+try:
+  loop.create_task(main(loop))
+  loop.create_task(some_test_worker())
+
+  loop.run_forever()
+except Exception as err:
+  msg = ''.join(traceback.format_tb(err.__traceback__) + [str(err)])
+  print(msg)
+finally:
+  cam.close()
+  stop(loop)
+```
+
 ## Camera settings
 
 ```python

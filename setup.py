@@ -36,7 +36,7 @@ setup(
         'Programming Language :: Python :: 3 :: Only',
     ],
 
-    py_modules=["dvrip", "DeviceManager"],
+    py_modules=["dvrip", "DeviceManager", "asyncio_dvrip"],
 
     python_requires='>=3.6',
 
