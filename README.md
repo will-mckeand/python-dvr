@@ -607,7 +607,7 @@ cam.set_info("fVideo.OSDInfo", {"Align": 2, "OSDInfo": [
 ], "strEnc": "UTF-8"})
 ```
 
-![screenshot](images/osd.png)
+![screenshot](images/osd-new.png)
 
 ## Upgrade camera firmware
 
