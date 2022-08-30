@@ -627,6 +627,67 @@ This script will persistently attempt to connect to camera at `CAMERA_IP`, will 
 ./monitor.py <CAMERA_IP> <CAMERA_NAME> <FILE_PATH>
 ```
 
+## OPFeederFunctions
+
+These functions are to handle the pet food dispenser when available.
+You can see it with :
+
+```python
+>>> cam.get_system_capabilities()['OtherFunction']['SupportFeederFunction']
+True
+```
+
+<details>
+  <summary>OPFeedManual</summary>
+  
+  ```python
+  >>> cam.set_command("OPFeedManual", {"Servings": 1})
+  {'Name': 'OPFeedManual', 'OPFeedManual': {'Feeded': 1, 'NotFeeding': 0}, 'Ret': 100, 'SessionID': '0x38'}
+  ```
+  
+  Servings is the number of portions
+
+</details>
+
+<details>
+  <summary>OPFeedBook</summary>
+  
+  ```python
+  >>> cam.get_command("OPFeedBook")
+  {'FeedBook': [{'Enable': 1, 'RecDate': '2018-04-01', 'RecTime': '12:19:18', 'Servings': 1, 'Time': '03:00:00'}, {'Enable': 1, 'RecDate': '2018-04-01', 'RecTime': '12:19:18', 'Servings': 1, 'Time': '09:00:00'}, {'Enable': 1, 'RecDate': '2018-04-01', 'RecTime': '12:19:18', 'Servings': 1, 'Time': '06:00:00'}, {'Enable': 1, 'RecDate': '2018-04-01', 'RecTime': '12:19:18', 'Servings': 1, 'Time': '15:00:00'}, {'Enable': 1, 'RecDate': '2018-04-01', 'RecTime': '12:19:18', 'Servings': 1, 'Time': '12:00:00'}, {'Enable': 1, 'RecDate': '2018-04-01', 'RecTime': '12:19:18', 'Servings': 1, 'Time': '21:00:00'}, {'Enable': 1, 'RecDate': '2018-04-01', 'RecTime': '12:19:18', 'Servings': 1, 'Time': '18:00:00'}, {'Enable': 1, 'RecDate': '2018-04-01', 'RecTime': '12:19:18', 'Servings': 1, 'Time': '00:00:00'}, {'Enable': 1, 'RecDate': '2018-04-01', 'RecTime': '12:19:18', 'Servings': 5, 'Time': '01:00:00'}]}
+  ```
+
+  ```python
+  >>> cam.set_command("OPFeedBook", {"Action": "Delete", "FeedBook": [{'Enable': 1, 'RecDate': '2018-04-01', 'RecTime': '12:19:18', 'Servings': 5, 'Time': '01:00:00'}]})
+  {'Name': 'OPFeedBook', 'Ret': 100, 'SessionID': '0x00000018'}
+  ```
+
+  ```python
+  >>> cam.set_command("OPFeedBook", {"Action": "Add", "FeedBook": [{'Enable': 1, 'RecDate': '2018-04-01', 'RecTime': '12:19:18', 'Servings': 5, 'Time': '01:00:00'}]})
+  {'Name': 'OPFeedBook', 'Ret': 100, 'SessionID': '0x00000018'}
+  ```
+
+</details>
+
+<details>
+  <summary>OPFeedHistory</summary>
+  
+  ```python
+  >>> cam.get_command("OPFeedHistory")
+  {'FeedHistory': [{'Date': '2022-08-29', 'Servings': 1, 'Time': '18:49:45', 'Type': 2}, {'Date': '2022-08-26', 'Servings': 3, 'Time': '07:30:12', 'Type': 1}]}
+  ```
+  
+  Type 1 : automatic
+
+  Type 2 : manual
+
+  ```python
+  >>> cam.set_command("OPFeedHistory", {"Action": "Delete", "FeedHistory": [{'Date': '2022-08-29', 'Servings': 1, 'Time': '19:40:01', 'Type': 2}]})
+  {'Name': 'OPFeedHistory', 'Ret': 100, 'SessionID': '0x00000027'}
+  ```
+
+</details>
+
 ## Troubleshooting
 
 ```python

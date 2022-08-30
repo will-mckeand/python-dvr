@@ -64,6 +64,19 @@ class DVRIPCam(object):
         "SystemFunction": 1360,
         "SystemInfo": 1020,
     }
+    OPFEED_QCODES = {
+        "OPFeedBook": {
+            "SET": 2300,
+            "GET": 2302,
+        },
+        "OPFeedManual": {
+            "SET": 2304,
+        },
+        "OPFeedHistory": {
+            "GET": 2306,
+            "SET": 2308,
+        },
+    }
     KEY_CODES = {
         "M": "Menu",
         "I": "Info",
@@ -534,6 +547,10 @@ class DVRIPCam(object):
 
     def set_command(self, command, data, code=None):
         if not code:
+            code = self.OPFEED_QCODES.get(command)
+            if code:
+                code = code.get("SET")
+        if not code:
             code = self.QCODES[command]
         return self.send(
             code, {"Name": command, "SessionID": "0x%08X" % self.session, command: data}
@@ -543,6 +560,10 @@ class DVRIPCam(object):
         return self.get_command(command, 1042)
 
     def get_command(self, command, code=None):
+        if not code:
+            code = self.OPFEED_QCODES.get(command)
+            if code:
+                code = code.get("GET")
         if not code:
             code = self.QCODES[command]
 
