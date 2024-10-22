@@ -1,6 +1,11 @@
 from dvrip import DVRIPCam, SomethingIsWrongWithCamera
 
-cams = ("192.168.0.14", "192.168.0.133", "192.168.0.222", "192.168.0.15")
+cams = (
+    "192.168.0.14",  # Garden Rear
+    "192.168.0.133",  # House Rear
+    "192.168.0.222",  # Garage
+    # "192.168.0.15",  # Coop
+)
 
 try:
     for IP in cams:
